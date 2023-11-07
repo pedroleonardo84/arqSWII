@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -74,6 +75,10 @@ public class CartaoCreditoService {
                 return buildDadosPagamento(dadosCobrancaDTO, DescricaoStatusEnum.LIMITE_EXCEDIDO);
             }
 
+            //atualiza o saldo cartao
+            cartao.setSaldoAtual(cartao.getSaldoAtual().subtract(dadosCobrancaDTO.valorPagamento()));
+            cartaoCreditoRepository.save(cartao);
+
             return buildDadosPagamento(dadosCobrancaDTO, DescricaoStatusEnum.PAGAMENTO_EFETUADO);
 
         } else {
@@ -110,7 +115,7 @@ public class CartaoCreditoService {
             return (Integer.parseInt(mesBase) >= mes);
         }
 
-        return (Integer.parseInt(anoFormatado) > Integer.parseInt(anoBase));
+        return (Integer.parseInt(anoBase) > Integer.parseInt(anoFormatado));
 
     }
 
@@ -123,37 +128,44 @@ public class CartaoCreditoService {
         return new DadosPagamentoDTO(dadosCobrancaDTO.idPedido(), dadosCobrancaDTO.tipoPagamento(),descricaoStatusEnum);
     }
 
-
-    //    public CartaoCredito salvarCartaoCredito(CartaoCredito cartaoCredito) {
-//        if (validarInformacoesCartaoCredito(cartaoCredito)) {
-//            return cartaoCreditoRepository.save(cartaoCredito);
-//        } else {
-//            throw new IllegalArgumentException("Informações do cartão de crédito inválidas");
-//        }
-//
-  private static boolean validarInformacoesCartaoCredito(CartaoCreditoDTO cartaoCredito) {
-            // Validação do número do cartão usando o algoritmo de Luhn
-            if (!isValidLuhn(cartaoCredito.numeroCartao())) {
-                return false;
-            }
-
-            // Validação do nome do titular (pode adicionar regras específicas, como tamanho mínimo/máximo)
-            if (cartaoCredito.nomeTitular() == null || cartaoCredito.nomeTitular().isEmpty()) {
-                return false;
-            }
-
-            // Validação da data de validade no formato MM/YY (pode adicionar regras como data futura)
-            if (!isValidDataValidade(cartaoCredito.dataValidade())) {
-                return false;
-            }
-
-            // Validação do CVV (código de segurança de 3 dígitos)
-            if (!isValidCVV(cartaoCredito.cvv())) {
-                return false;
-            }
-
-            return true;
+    public CartaoCredito salvarCartaoCredito(CartaoCreditoDTO cartaoCreditoDTO) {
+        if (validarInformacoesCartaoCredito(cartaoCreditoDTO)) {
+            CartaoCredito cartao = new CartaoCredito();
+            cartao.setNumeroCartao(cartaoCreditoDTO.numeroCartao());
+            cartao.setNomeTitular(cartaoCreditoDTO.nomeTitular());
+            cartao.setDataValidade(cartaoCreditoDTO.dataValidade());
+            cartao.setCvv(cartaoCreditoDTO.cvv());
+            cartao.setLimiteCredito(BigDecimal.valueOf(10000.00));
+            cartao.setSaldoAtual(BigDecimal.valueOf(10000.00));
+            return cartaoCreditoRepository.save(cartao);
+        } else {
+            throw new IllegalArgumentException("Informações do cartão de crédito inválidas");
         }
+    }
+
+    private static boolean validarInformacoesCartaoCredito(CartaoCreditoDTO cartaoCredito) {
+        // Validação do número do cartão usando o algoritmo de Luhn
+        if (!isValidLuhn(cartaoCredito.numeroCartao())) {
+            return false;
+        }
+
+        // Validação do nome do titular (pode adicionar regras específicas, como tamanho mínimo/máximo)
+        if (cartaoCredito.nomeTitular() == null || cartaoCredito.nomeTitular().isEmpty()) {
+            return false;
+        }
+
+        // Validação da data de validade no formato MM/YY (pode adicionar regras como data futura)
+        if (!isValidDataValidade(cartaoCredito.dataValidade())) {
+            return false;
+        }
+
+        // Validação do CVV (código de segurança de 3 dígitos)
+        if (!isValidCVV(cartaoCredito.cvv())) {
+            return false;
+        }
+
+        return true;
+    }
 
     private static boolean isValidLuhn(String numeroCartao) {
         // Remova espaços em branco e caracteres não numéricos
@@ -186,23 +198,23 @@ public class CartaoCreditoService {
         return sum % 10 == 0;
     }
 
-        private static boolean isValidDataValidade(String dataValidade) {
-            if (dataValidade == null || !dataValidade.matches("\\d{2}/\\d{2}")) {
-                return false;
-            }
-
-            // Você também pode adicionar validações adicionais, como verificar se a data é futura
-
-            return true;
+    private static boolean isValidDataValidade(String dataValidade) {
+        if (dataValidade == null || !dataValidade.matches("\\d{2}/\\d{2}")) {
+            return false;
         }
+        return true;
+    }
 
-        private static boolean isValidCVV(String cvv) {
-            if (cvv == null || !cvv.matches("\\d{3}")) {
-                return false;
-            }
-
-            return true;
+    private static boolean isValidCVV(String cvv) {
+        if (cvv == null || !cvv.matches("\\d{3}")) {
+            return false;
         }
+        return true;
+    }
+
+    public Optional<List<CartaoCredito>> getAll() throws Exception {
+        return Optional.ofNullable(Optional.ofNullable(cartaoCreditoRepository.findAll()).orElseThrow(() -> new Exception("Erro ao listar cartões")));
+    }
 
 //    public CartaoCredito salvarCartaoCredito(CartaoCreditoDTO cartaoCredito) {
 //        if (validarInformacoesCartaoCredito(cartaoCredito) &&
