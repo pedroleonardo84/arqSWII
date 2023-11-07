@@ -1,8 +1,7 @@
 package com.ada.f1rst.paymentapp.controller;
 
-import com.ada.f1rst.paymentapp.dto.DadosCobrancaDTO;
 import com.ada.f1rst.paymentapp.dto.DadosPagamentoDTO;
-import com.ada.f1rst.paymentapp.service.RabbitMQService;
+import com.ada.f1rst.paymentapp.producer.PaymentProducer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +14,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(value="api/payment/bilingdata")
 public class BilingDataController {
     @Autowired
-    private RabbitMQService rabbitMQService;
+    private final PaymentProducer paymentProducer;
+
+    public BilingDataController(PaymentProducer paymentProducer) {
+        this.paymentProducer = paymentProducer;
+    }
+
     @PutMapping("/updatebiling")
     private ResponseEntity updateBiling(@RequestBody DadosPagamentoDTO dadosPagamentoDTO){
-        this.rabbitMQService.producer(dadosPagamentoDTO);
+        this.paymentProducer.producer(dadosPagamentoDTO);
         return new ResponseEntity(HttpStatus.OK);
     }
 }

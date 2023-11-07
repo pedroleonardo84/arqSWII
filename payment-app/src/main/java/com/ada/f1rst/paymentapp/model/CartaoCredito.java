@@ -23,7 +23,7 @@ public class CartaoCredito {
     private String nomeTitular;
 
     @Column(name = "datavalidade")
-    private LocalDate dataValidade;
+    private String dataValidade;
 
     @Column(name = "cvv")
     private String cvv;
