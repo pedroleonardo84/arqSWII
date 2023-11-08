@@ -163,8 +163,7 @@ public class PedidoServiceImpl implements PedidoService {
             stockFeignClient.setNewQuantity(
                     Long.valueOf(
                             String.valueOf(produtoDTO.getProduto().getId())
-                    )
-                    , (produtoDTO.getProduto().getQuantidade() - 1));
+                    ), (produtoDTO.getProduto().getQuantidade() - 1));
         }
     }
 
