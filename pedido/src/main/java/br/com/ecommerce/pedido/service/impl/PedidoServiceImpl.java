@@ -1,5 +1,6 @@
 package br.com.ecommerce.pedido.service.impl;
 
+import br.com.ecommerce.pedido.Enum.DescricaoStatusEnum;
 import br.com.ecommerce.pedido.Enum.TipoDePagamento;
 import br.com.ecommerce.pedido.converter.PedidoConverter;
 import br.com.ecommerce.pedido.dto.request.CartaoCreditoDTO;
@@ -93,9 +94,16 @@ public class PedidoServiceImpl implements PedidoService {
 
     @Override
     public void processarMensagem(DadosPagamentoDTO dadosPagamentoDTO) {
-        System.out.println("==========================");
-        System.out.println("Atualizar Status Pedido e a depender atualizar Estoque");
-        System.out.println(dadosPagamentoDTO);
+        Pedido pedido = pedidoRepository.findById(String.valueOf(dadosPagamentoDTO.idPedido())).orElseThrow(() -> new PedidoNaoEncontradoException("Pedido não encontrado!"));
+        pedido.setStatusPagamento(dadosPagamentoDTO.statusPagamento());
+        pedidoRepository.save(pedido);
+        if (pedido.getStatusPagamento().equals(DescricaoStatusEnum.PAGAMENTO_EFETUADO)){
+            //chamar a api Carrinho com o idCarrinho, para obter os produtos e quantidades
+            //pedido.getIdCarrinho();
+            //de posse dos produtos e quantidade, chamar a api do Estoque para atualizar as quantidades
+            System.out.println("Pedido Aprovado");
+        }
+        System.out.println("Pedido " + pedido.getId() + " atualizado. O status do pagamento é: " + pedido.getStatusPagamento());
     }
 
 }

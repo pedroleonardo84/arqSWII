@@ -1,5 +1,6 @@
 package br.com.ecommerce.pedido.model;
 
+import br.com.ecommerce.pedido.Enum.DescricaoStatusEnum;
 import br.com.ecommerce.pedido.Enum.StatusPagamento;
 import br.com.ecommerce.pedido.Enum.StatusPedido;
 import br.com.ecommerce.pedido.Enum.TipoDePagamento;
@@ -33,7 +34,7 @@ public class Pedido {
     private Date dataTransacao;
 
     @Column(nullable = false)
-    private StatusPagamento statusPagamento;
+    private DescricaoStatusEnum statusPagamento;
 
     @Column(nullable = true)
     private String numeroCartao;

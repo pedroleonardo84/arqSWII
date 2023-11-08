@@ -1,5 +1,6 @@
 package br.com.ecommerce.pedido.converter;
 
+import br.com.ecommerce.pedido.Enum.DescricaoStatusEnum;
 import br.com.ecommerce.pedido.Enum.StatusPagamento;
 import br.com.ecommerce.pedido.Enum.StatusPedido;
 import br.com.ecommerce.pedido.Enum.TipoDePagamento;
@@ -31,7 +32,7 @@ public class PedidoConverter {
         pedido.setTipo(TipoDePagamento.valueOf(pedidoRequest.getTipo()));
         pedido.setCodigoBoleto(pedidoRequest.getCodigoBoleto());
         pedido.setCodigoSeguranca(pedidoRequest.getCodigoSeguranca());
-        pedido.setStatusPagamento(StatusPagamento.PROCESSANDO);
+        pedido.setStatusPagamento(DescricaoStatusEnum.EM_PROCESSAMENTO);
         pedido.setStatusPedido(StatusPedido.EM_PROCESSAMENTO);
         pedido.setValorTotal(pedidoRequest.getValorTotal());
         pedido.setNumeroCartao(pedidoRequest.getNumeroCartao());
@@ -48,7 +49,7 @@ public class PedidoConverter {
         pedido.setTipo(TipoDePagamento.valueOf(pedidoRequest.getTipo().getDescricao()));
         pedido.setCodigoBoleto(pedidoRequest.getCodigoBoleto());
         pedido.setCodigoSeguranca(pedidoRequest.getCodigoSeguranca());
-        pedido.setStatusPagamento(StatusPagamento.PROCESSANDO);
+        pedido.setStatusPagamento(DescricaoStatusEnum.EM_PROCESSAMENTO);
         pedido.setStatusPedido(StatusPedido.EM_PROCESSAMENTO);
         pedido.setValorTotal(pedidoRequest.getValorTotal());
         pedido.setNumeroCartao(CartaoUtil.mascararCartaoCredito(pedidoRequest.getNumeroCartao()));

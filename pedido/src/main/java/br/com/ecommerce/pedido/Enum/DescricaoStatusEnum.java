@@ -7,6 +7,7 @@ public enum DescricaoStatusEnum {
     VALIDADE_EXPIRADA("O cartão informado possui data de validade expirada"),
     PAGAMENTO_EFETUADO("Pagamento realizado com sucesso"),
     PAGAMENTO_RECUSADO("Pagamento foi recusado"),
+    EM_PROCESSAMENTO("Pagamento em processamento"),
     ESTORNO_EFETUADO("Estorno realizado com sucesso"),
     PAGAMENTO_PENDENTE("O pedido está pendente de pagamento");
 

@@ -1,5 +1,6 @@
 package br.com.ecommerce.pedido.dto.response;
 
+import br.com.ecommerce.pedido.Enum.DescricaoStatusEnum;
 import br.com.ecommerce.pedido.Enum.StatusPagamento;
 import br.com.ecommerce.pedido.Enum.StatusPedido;
 import br.com.ecommerce.pedido.Enum.TipoDePagamento;
@@ -23,7 +24,7 @@ public class PedidoDTO {
     private String idCarrinho;
     private TipoDePagamento tipo;
     private Date dataTransacao;
-    private StatusPagamento statusPagamento;
+    private DescricaoStatusEnum statusPagamento;
     private StatusPedido statusPedido;
 
 }
