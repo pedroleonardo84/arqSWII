@@ -1,25 +1,30 @@
 package br.com.ecommerce.pedido.service.impl;
 
 import br.com.ecommerce.pedido.Enum.DescricaoStatusEnum;
+import br.com.ecommerce.pedido.Enum.StatusPedido;
 import br.com.ecommerce.pedido.Enum.TipoDePagamento;
 import br.com.ecommerce.pedido.converter.PedidoConverter;
 import br.com.ecommerce.pedido.dto.request.CartaoCreditoDTO;
 import br.com.ecommerce.pedido.dto.request.DadosCobrancaDTO;
 import br.com.ecommerce.pedido.dto.request.PedidoRequestDTO;
-import br.com.ecommerce.pedido.dto.response.DadosPagamentoDTO;
-import br.com.ecommerce.pedido.dto.response.PedidoDTO;
-import br.com.ecommerce.pedido.dto.response.ResponseDTO;
+import br.com.ecommerce.pedido.dto.response.*;
+import br.com.ecommerce.pedido.exception.ErroIntegracaoFeign;
 import br.com.ecommerce.pedido.exception.PedidoNaoEncontradoException;
 import br.com.ecommerce.pedido.model.Pedido;
 import br.com.ecommerce.pedido.producer.PedidoProducer;
 import br.com.ecommerce.pedido.repository.PedidoRepository;
+import br.com.ecommerce.pedido.service.service.CartApiFeignClient;
 import br.com.ecommerce.pedido.service.service.PedidoService;
+import br.com.ecommerce.pedido.service.service.StockFeignClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.FeignException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +36,14 @@ public class PedidoServiceImpl implements PedidoService {
     private PedidoRepository pedidoRepository;
 
     @Autowired PedidoProducer pedidoProducer;
+
+    @Autowired
+    CartApiFeignClient carrinho;
+
+    @Autowired
+    StockFeignClient stockFeignClient;
+
+    ObjectMapper objectMapper = new ObjectMapper();
 
     private PedidoConverter pedidoConverter = new PedidoConverter();
 
@@ -92,18 +105,73 @@ public class PedidoServiceImpl implements PedidoService {
         this.pedidoRepository.deleteById(id);
     }
 
+    public PedidoServiceImpl(PedidoRepository pedidoRepository) {
+        this.pedidoRepository = pedidoRepository;
+    }
+
     @Override
     public void processarMensagem(DadosPagamentoDTO dadosPagamentoDTO) {
         Pedido pedido = pedidoRepository.findById(String.valueOf(dadosPagamentoDTO.idPedido())).orElseThrow(() -> new PedidoNaoEncontradoException("Pedido não encontrado!"));
         pedido.setStatusPagamento(dadosPagamentoDTO.statusPagamento());
         pedidoRepository.save(pedido);
         if (pedido.getStatusPagamento().equals(DescricaoStatusEnum.PAGAMENTO_EFETUADO)){
-            //chamar a api Carrinho com o idCarrinho, para obter os produtos e quantidades
-            //pedido.getIdCarrinho();
+            try { //chamar a api Carrinho com o idCarrinho, para obter os produtos e quantidades
+                CarrinhoDTO carrinhoDTO = verificarCarrinho(pedido);
+                alterarEstoque(carrinhoDTO);
+
+            } catch (FeignException e) {
+                if (e.status() != 200) {
+                    // O status HTTP não é 200, lança uma exceção personalizada ou tratamento de erro apropriado.
+                    throw new ErroIntegracaoFeign("A chamada Feign não retornou status 200");
+                }
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
             //de posse dos produtos e quantidade, chamar a api do Estoque para atualizar as quantidades
             System.out.println("Pedido Aprovado");
         }
-        System.out.println("Pedido " + pedido.getId() + " atualizado. O status do pagamento é: " + pedido.getStatusPagamento());
+        switch (pedido.getStatusPagamento()){
+            case PAGAMENTO_RECUSADO:
+            case ESTORNO_EFETUADO:
+            case PAGAMENTO_PENDENTE:
+                pedido.setStatusPedido(StatusPedido.AGUARDANDO_PAGAMENTO);
+                pedidoRepository.save(pedido);
+                break;
+            case PAGAMENTO_EFETUADO:
+                pedido.setStatusPedido(StatusPedido.PREPARANDO_PARA_ENTREGAR);
+                pedidoRepository.save(pedido);
+                break;
+            case EM_PROCESSAMENTO:
+                pedido.setStatusPedido(StatusPedido.EM_PROCESSAMENTO);
+                pedidoRepository.save(pedido);
+                break;
+
+            case CVV_INVALIDO:
+            case DADOS_INVALIDOS:
+            case LIMITE_EXCEDIDO:
+            case VALIDADE_EXPIRADA:
+                pedido.setStatusPedido(StatusPedido.CANCELADO);
+                pedidoRepository.save(pedido);
+                break;
+        }
+    }
+
+    private void alterarEstoque(CarrinhoDTO carrinhoDTO) {
+        for (ItemCarrinhoDTO produtoDTO: carrinhoDTO.getProdutos()) {
+            System.out.println("Produto "+ String.valueOf(produtoDTO.getProduto().getId())+" com quantidade "+(produtoDTO.getProduto().getQuantidade()).toString()+", passará a ter "+(produtoDTO.getProduto().getQuantidade() - 1));
+
+            stockFeignClient.setNewQuantity(
+                    Long.valueOf(
+                            String.valueOf(produtoDTO.getProduto().getId())
+                    )
+                    , (produtoDTO.getProduto().getQuantidade() - 1));
+        }
+    }
+
+    private CarrinhoDTO verificarCarrinho(Pedido pedido) throws JsonProcessingException {
+        var json = carrinho.getCarrinhoPorId(Long.parseLong(pedido.getIdCarrinho()));
+        CarrinhoDTO carrinhoDTO = objectMapper.readValue(json, CarrinhoDTO.class );
+        return carrinhoDTO;
     }
 
 }

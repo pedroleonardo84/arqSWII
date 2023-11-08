@@ -2,6 +2,7 @@ package br.com.ecommerce.pedido.Enum;
 
 public enum StatusPedido {
     AGUARDANDO_PAGAMENTO("Aguardando Pagamento"),
+    PREPARANDO_PARA_ENTREGAR("Aguardando Pagamento"),
     EM_PROCESSAMENTO("Em Processamento"),
     ENVIADO("Enviado"),
     ENTREGUE("Entregue"),
