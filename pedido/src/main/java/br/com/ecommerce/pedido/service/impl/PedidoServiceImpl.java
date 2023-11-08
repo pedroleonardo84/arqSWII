@@ -161,9 +161,8 @@ public class PedidoServiceImpl implements PedidoService {
             System.out.println("Produto "+ String.valueOf(produtoDTO.getProduto().getId())+" com quantidade "+(produtoDTO.getProduto().getQuantidade()).toString()+", passará a ter "+(produtoDTO.getProduto().getQuantidade() - 1));
 
             stockFeignClient.setNewQuantity(
-                    Long.valueOf(
-                            String.valueOf(produtoDTO.getProduto().getId())
-                    ), (produtoDTO.getProduto().getQuantidade() - 1));
+                    Long.valueOf(String.valueOf(produtoDTO.getProduto().getId())),
+                    (produtoDTO.getProduto().getQuantidade() - 1));
         }
     }
 
